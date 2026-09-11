@@ -27,11 +27,9 @@ urllib3.disable_warnings(
 # ============================================================
 
 PDF_URLS = [
-
     # --------------------------------------------------------
     # KANTANSHI
     # --------------------------------------------------------
-
     {
         "constituency": "Kantanshi",
         "url": (
@@ -62,7 +60,6 @@ PDF_URLS = [
     # --------------------------------------------------------
     # KANKOYO
     # --------------------------------------------------------
-
     {
         "constituency": "Kankoyo",
         "url": (
@@ -84,7 +81,6 @@ PDF_URLS = [
     # --------------------------------------------------------
     # MUFULIRA CENTRAL
     # --------------------------------------------------------
-
     {
         "constituency": "Mufulira Central",
         "url": (
@@ -129,43 +125,21 @@ session.headers.update({
 # ============================================================
 
 SCHEMA_COLS = [
-
     "Constituency",
-
     "No",
-
     "Ward",
-
-    "Zone",
-
     "Name_of_Pupil",
-
     "NRC",
-
     "Gender",
-
     "Date_of_Birth",
-
     "Type_of_Vulnerability",
-
     "Study_Programme",
-
     "Study_Type",
-
     "Course_Duration",
-
     "Name_of_Skills_Institution",
-
-    "Total_TEVETA_Fees",
-
-    "Approved",
-
+    "Total",
     "Guardian_Parent_Name",
-
-    "Guardian_Parent_Phone",
-
     "Source_File"
-
 ]
 
 
@@ -174,7 +148,6 @@ SCHEMA_COLS = [
 # ============================================================
 
 def clean_text(value):
-
     if value is None:
         return ""
 
@@ -184,16 +157,16 @@ def clean_text(value):
     value = value.replace("\r", " ")
     value = value.replace("\t", " ")
 
-    value = re.sub(
-        r"\s+",
-        " ",
-        value
-    )
+    value = re.sub(r"\s+", " ", value)
 
     return value.strip()
 
 
 def normalize_header(value):
+    """
+    Normalizes PDF/OCR column headings so that different
+    spellings can be recognized.
+    """
 
     value = clean_text(value).upper()
 
@@ -203,22 +176,18 @@ def normalize_header(value):
     value = value.replace(")", " ")
     value = value.replace(".", " ")
 
-    value = re.sub(
-        r"\s+",
-        " ",
-        value
-    )
+    value = re.sub(r"\s+", " ", value)
 
     return value.strip()
 
 
 def clean_nrc(value):
-
     value = clean_text(value)
 
     if not value:
         return ""
 
+    # Keep NRC formatting such as 123456/12/1
     value = re.sub(
         r"[^A-Za-z0-9/ -]",
         "",
@@ -229,7 +198,6 @@ def clean_nrc(value):
 
 
 def clean_gender(value):
-
     value = clean_text(value).upper()
 
     if value in ["M", "MALE"]:
@@ -242,45 +210,18 @@ def clean_gender(value):
 
 
 def clean_amount(value):
-
     value = clean_text(value)
 
     if not value:
         return ""
 
-    value = value.replace(
-        "ZMW",
-        ""
-    )
-
-    value = value.replace(
-        "K",
-        ""
-    )
-
-    value = value.replace(
-        ",",
-        ""
-    )
+    # Preserve numeric value but remove currency symbols
+    value = value.replace("ZMW", "")
+    value = value.replace("K", "")
+    value = value.replace(",", "")
 
     value = re.sub(
         r"[^\d.]",
-        "",
-        value
-    )
-
-    return value
-
-
-def clean_phone(value):
-
-    value = clean_text(value)
-
-    if not value:
-        return ""
-
-    value = re.sub(
-        r"[^\d+]",
         "",
         value
     )
@@ -293,7 +234,6 @@ def clean_phone(value):
 # ============================================================
 
 def get_filename(url):
-
     filename = os.path.basename(
         urlparse(url).path
     )
@@ -318,9 +258,7 @@ def download_pdf(item):
 
     filename = get_filename(url)
 
-    print(
-        "\n" + "=" * 70
-    )
+    print("\n" + "=" * 70)
 
     print(
         f"Downloading {constituency}"
@@ -330,9 +268,7 @@ def download_pdf(item):
         f"URL: {url}"
     )
 
-    print(
-        "=" * 70
-    )
+    print("=" * 70)
 
     response = session.get(
         url,
@@ -384,7 +320,93 @@ def pdf_has_extractable_text(pdf_bytes):
 
 
 # ============================================================
-# HEADER ALIASES
+# EXTRACT NORMAL PDF TEXT/TABLES
+# ============================================================
+
+def extract_normal_pdf(
+    pdf_bytes,
+    constituency,
+    filename
+):
+
+    print(
+        f"   📄 Trying normal PDF extraction: "
+        f"{filename}"
+    )
+
+    records = []
+
+    try:
+
+        with pdfplumber.open(
+            BytesIO(pdf_bytes)
+        ) as pdf:
+
+            for page_number, page in enumerate(
+                pdf.pages,
+                start=1
+            ):
+
+                # ------------------------------------------------
+                # First try table extraction
+                # ------------------------------------------------
+                tables = page.extract_tables()
+
+                if tables:
+
+                    for table in tables:
+
+                        if not table:
+                            continue
+
+                        page_records = parse_table(
+                            table,
+                            constituency,
+                            filename
+                        )
+
+                        records.extend(
+                            page_records
+                        )
+
+                # ------------------------------------------------
+                # If no usable table, use text
+                # ------------------------------------------------
+                if not tables or not records:
+
+                    text = page.extract_text()
+
+                    if text:
+
+                        page_records = parse_text_rows(
+                            text,
+                            constituency,
+                            filename
+                        )
+
+                        records.extend(
+                            page_records
+                        )
+
+    except Exception as error:
+
+        print(
+            f"   ❌ Normal PDF extraction failed: "
+            f"{error}"
+        )
+
+        return []
+
+    print(
+        f"   ✓ Normal PDF extraction produced "
+        f"{len(records)} applicant rows"
+    )
+
+    return records
+
+
+# ============================================================
+# HEADER DETECTION
 # ============================================================
 
 HEADER_ALIASES = {
@@ -400,10 +422,6 @@ HEADER_ALIASES = {
     "Ward": [
         "WARD",
         "WARD NAME"
-    ],
-
-    "Zone": [
-        "ZONE"
     ],
 
     "Name_of_Pupil": [
@@ -468,19 +486,11 @@ HEADER_ALIASES = {
         "NAME OF INSTITUTION"
     ],
 
-    "Total_TEVETA_Fees": [
-        "TOTAL TEVETA FEES",
+    "Total": [
         "TOTAL",
-        "TOTAL FEES",
-        "TEVETA FEES",
         "AMOUNT",
         "TOTAL AMOUNT",
         "COST"
-    ],
-
-    "Approved": [
-        "APPROVED",
-        "APPROVAL"
     ],
 
     "Guardian_Parent_Name": [
@@ -490,21 +500,9 @@ HEADER_ALIASES = {
         "GUARDIAN PARENT NAME",
         "PARENT NAME",
         "GUARDIAN NAME"
-    ],
-
-    "Guardian_Parent_Phone": [
-        "MOBILE NO",
-        "MOBILE",
-        "PHONE",
-        "PHONE NUMBER",
-        "MOBILE NUMBER"
     ]
 }
 
-
-# ============================================================
-# IDENTIFY HEADER COLUMNS
-# ============================================================
 
 def identify_header_columns(header_row):
 
@@ -526,69 +524,15 @@ def identify_header_columns(header_row):
 
             for alias in aliases:
 
-                normalized_alias = normalize_header(
-                    alias
-                )
-
-                if (
-                    header == normalized_alias
-                    or normalized_alias in header
-                ):
+                if header == alias:
 
                     mapping[schema_field] = index
-
                     break
 
             if schema_field in mapping:
                 break
 
     return mapping
-
-
-# ============================================================
-# PARSE GUARDIAN / PARENT PHONE
-# ============================================================
-
-def split_guardian_phone(value):
-
-    value = clean_text(value)
-
-    if not value:
-        return "", ""
-
-    phone_pattern = (
-        r"(?<!\d)"
-        r"(?:\+?260[\s-]?)?"
-        r"(?:0?[79]\d{8})"
-        r"(?!\d)"
-    )
-
-    matches = re.findall(
-        phone_pattern,
-        value
-    )
-
-    if not matches:
-
-        return value, ""
-
-    phone = matches[-1]
-
-    phone = clean_phone(
-        phone
-    )
-
-    guardian_name = re.sub(
-        phone_pattern,
-        "",
-        value
-    )
-
-    guardian_name = clean_text(
-        guardian_name
-    )
-
-    return guardian_name, phone
 
 
 # ============================================================
@@ -605,7 +549,7 @@ def parse_table(
         return []
 
     # --------------------------------------------------------
-    # Find header row
+    # Find the header row
     # --------------------------------------------------------
 
     header_index = None
@@ -616,14 +560,13 @@ def parse_table(
         if not row:
             continue
 
-        mapping = identify_header_columns(
-            row
-        )
+        mapping = identify_header_columns(row)
 
+        # We need several recognizable columns before
+        # considering this the real header.
         if len(mapping) >= 4:
 
             header_index = i
-
             column_mapping = mapping
 
             break
@@ -650,6 +593,7 @@ def parse_table(
             for x in row
         ]
 
+        # Skip completely empty rows
         if not any(row):
             continue
 
@@ -659,12 +603,7 @@ def parse_table(
         }
 
         record["Constituency"] = constituency
-
         record["Source_File"] = filename
-
-        # ----------------------------------------------------
-        # Map every recognized column
-        # ----------------------------------------------------
 
         for field, index in column_mapping.items():
 
@@ -674,64 +613,23 @@ def parse_table(
             value = row[index]
 
             if field == "NRC":
-
-                value = clean_nrc(
-                    value
-                )
+                value = clean_nrc(value)
 
             elif field == "Gender":
+                value = clean_gender(value)
 
-                value = clean_gender(
-                    value
-                )
-
-            elif field == "Total_TEVETA_Fees":
-
-                value = clean_amount(
-                    value
-                )
-
-            elif field == "Guardian_Parent_Name":
-
-                guardian_name, phone = (
-                    split_guardian_phone(
-                        value
-                    )
-                )
-
-                record[
-                    "Guardian_Parent_Name"
-                ] = guardian_name
-
-                if not record[
-                    "Guardian_Parent_Phone"
-                ]:
-
-                    record[
-                        "Guardian_Parent_Phone"
-                    ] = phone
-
-                continue
-
-            elif field == "Guardian_Parent_Phone":
-
-                value = clean_phone(
-                    value
-                )
+            elif field == "Total":
+                value = clean_amount(value)
 
             record[field] = value
 
         # ----------------------------------------------------
-        # Applicant row check
+        # Check whether this is actually an applicant row
         # ----------------------------------------------------
 
-        if is_applicant_record(
-            record
-        ):
+        if is_applicant_record(record):
 
-            records.append(
-                record
-            )
+            records.append(record)
 
     return records
 
@@ -754,124 +652,20 @@ def is_applicant_record(record):
         record.get("NRC", "")
     )
 
-    if (
+    # At least one strong applicant indicator
+    if number and re.search(
+        r"\d{1,3}",
         number
-        and re.search(
-            r"\d{1,3}",
-            number
-        )
     ):
-
         return True
 
-    if (
-        name
-        and len(name) >= 3
-    ):
-
+    if name and len(name) >= 3:
         return True
 
-    if (
-        nrc
-        and len(nrc) >= 5
-    ):
-
+    if nrc and len(nrc) >= 5:
         return True
 
     return False
-
-
-# ============================================================
-# EXTRACT NORMAL PDF
-# ============================================================
-
-def extract_normal_pdf(
-    pdf_bytes,
-    constituency,
-    filename
-):
-
-    print(
-        f"   📄 Trying normal PDF extraction: "
-        f"{filename}"
-    )
-
-    records = []
-
-    try:
-
-        with pdfplumber.open(
-            BytesIO(pdf_bytes)
-        ) as pdf:
-
-            for page_number, page in enumerate(
-                pdf.pages,
-                start=1
-            ):
-
-                print(
-                    f"      Page {page_number}..."
-                )
-
-                tables = page.extract_tables()
-
-                if tables:
-
-                    print(
-                        f"         Tables found: "
-                        f"{len(tables)}"
-                    )
-
-                    for table in tables:
-
-                        if not table:
-                            continue
-
-                        page_records = parse_table(
-                            table,
-                            constituency,
-                            filename
-                        )
-
-                        records.extend(
-                            page_records
-                        )
-
-                # ------------------------------------------------
-                # Text fallback for this page
-                # ------------------------------------------------
-
-                if not tables:
-
-                    text = page.extract_text()
-
-                    if text:
-
-                        page_records = parse_text_rows(
-                            text,
-                            constituency,
-                            filename
-                        )
-
-                        records.extend(
-                            page_records
-                        )
-
-    except Exception as error:
-
-        print(
-            f"   ❌ Normal PDF extraction failed: "
-            f"{error}"
-        )
-
-        return []
-
-    print(
-        f"   ✓ Normal PDF extraction produced "
-        f"{len(records)} applicant rows"
-    )
-
-    return records
 
 
 # ============================================================
@@ -898,16 +692,14 @@ def parse_text_rows(
     ]
 
     # --------------------------------------------------------
-    # Find header
+    # Find the header
     # --------------------------------------------------------
 
     header_line_index = None
 
     for i, line in enumerate(lines):
 
-        upper = normalize_header(
-            line
-        )
+        upper = normalize_header(line)
 
         score = 0
 
@@ -915,16 +707,13 @@ def parse_text_rows(
 
             for alias in aliases:
 
-                if normalize_header(alias) in upper:
-
+                if alias in upper:
                     score += 1
-
                     break
 
         if score >= 4:
 
             header_line_index = i
-
             break
 
     if header_line_index is None:
@@ -943,33 +732,35 @@ def parse_text_rows(
 
     for line in data_lines:
 
+        # Skip obvious document headings
         upper = line.upper()
 
         if (
             "APPROVED SKILL DEVELOPMENT" in upper
             or "APPLICANTS" in upper
             or "STUDENTS LISTED BELOW" in upper
+            or "TRAINING INSTITUTION" in upper
         ):
-
             continue
+
+        # ----------------------------------------------------
+        # Applicant rows generally begin with a number
+        # ----------------------------------------------------
 
         if re.match(
             r"^\s*\d{1,3}\b",
             line
         ):
 
-            current_rows.append(
-                line
-            )
+            current_rows.append(line)
 
         elif current_rows:
 
-            current_rows[-1] += (
-                " " + line
-            )
+            # Wrapped PDF text row
+            current_rows[-1] += " " + line
 
     # --------------------------------------------------------
-    # Parse reconstructed rows
+    # Parse each reconstructed row
     # --------------------------------------------------------
 
     for line in current_rows:
@@ -982,9 +773,7 @@ def parse_text_rows(
 
         if record:
 
-            records.append(
-                record
-            )
+            records.append(record)
 
     return records
 
@@ -999,9 +788,11 @@ def parse_text_applicant_line(
     filename
 ):
 
-    line = clean_text(
-        line
-    )
+    line = clean_text(line)
+
+    # --------------------------------------------------------
+    # Applicant number
+    # --------------------------------------------------------
 
     number_match = re.match(
         r"^(\d{1,3})\s+(.*)$",
@@ -1013,19 +804,29 @@ def parse_text_applicant_line(
         return None
 
     number = number_match.group(1)
-
     body = number_match.group(2)
 
-    nrc = ""
+    # --------------------------------------------------------
+    # NRC
+    #
+    # Typical Zambian NRC:
+    # 123456/12/1
+    # --------------------------------------------------------
 
     nrc_match = re.search(
         r"\b\d{6}/\d{2}/\d\b",
         body
     )
 
+    nrc = ""
+
     if nrc_match:
 
         nrc = nrc_match.group(0)
+
+    # --------------------------------------------------------
+    # Gender
+    # --------------------------------------------------------
 
     gender = ""
 
@@ -1039,6 +840,10 @@ def parse_text_applicant_line(
 
         gender = gender_match.group(1).upper()
 
+    # --------------------------------------------------------
+    # Date of birth
+    # --------------------------------------------------------
+
     dob = ""
 
     dob_match = re.search(
@@ -1050,11 +855,18 @@ def parse_text_applicant_line(
 
         dob = dob_match.group(0)
 
+    # --------------------------------------------------------
+    # Create basic record
+    #
+    # Text PDFs are much harder because columns may be
+    # flattened into a single line. We still preserve the
+    # complete row in Scope-like fields where possible.
+    # --------------------------------------------------------
+
     record = {
         "Constituency": constituency,
         "No": number,
         "Ward": "",
-        "Zone": "",
         "Name_of_Pupil": "",
         "NRC": nrc,
         "Gender": gender,
@@ -1064,44 +876,47 @@ def parse_text_applicant_line(
         "Study_Type": "",
         "Course_Duration": "",
         "Name_of_Skills_Institution": "",
-        "Total_TEVETA_Fees": "",
-        "Approved": "",
+        "Total": "",
         "Guardian_Parent_Name": "",
-        "Guardian_Parent_Phone": "",
         "Source_File": filename
     }
 
-    name = body
+    # --------------------------------------------------------
+    # Remove known fields from the body to get the applicant
+    # name more safely.
+    # --------------------------------------------------------
+
+    name_part = body
 
     if nrc:
-
-        name = name.replace(
+        name_part = name_part.replace(
             nrc,
             " "
         )
 
     if gender:
-
-        name = re.sub(
+        name_part = re.sub(
             rf"\b{gender}\b",
             " ",
-            name,
+            name_part,
             count=1,
             flags=re.IGNORECASE
         )
 
     if dob:
-
-        name = name.replace(
+        name_part = name_part.replace(
             dob,
             " "
         )
 
-    name = clean_text(
-        name
+    name_part = clean_text(
+        name_part
     )
 
-    record["Name_of_Pupil"] = name
+    # If we have something meaningful, retain it.
+    if name_part:
+
+        record["Name_of_Pupil"] = name_part
 
     return record
 
@@ -1165,7 +980,7 @@ def extract_ocr_pdf(
         )
 
         # ----------------------------------------------------
-        # Orientation detection
+        # Attempt orientation detection
         # ----------------------------------------------------
 
         try:
@@ -1206,7 +1021,7 @@ def extract_ocr_pdf(
         )
 
         # ----------------------------------------------------
-        # Parse OCR rows
+        # First try OCR as table-like text
         # ----------------------------------------------------
 
         page_records = parse_ocr_applicant_rows(
@@ -1250,12 +1065,26 @@ def parse_ocr_applicant_rows(
         if line
     ]
 
+    # --------------------------------------------------------
+    # Find lines that begin with applicant number
+    # --------------------------------------------------------
+
     current_row = ""
 
     rows = []
 
     for line in lines:
 
+        # OCR can produce:
+        #
+        # 1 John Banda ...
+        # 2 Mary ...
+        #
+        # or:
+        #
+        # 1.
+        # John Banda ...
+        #
         starts_with_number = re.match(
             r"^\s*\d{1,3}(?:[.)])?\s+",
             line
@@ -1275,15 +1104,17 @@ def parse_ocr_applicant_rows(
 
             if current_row:
 
-                current_row += (
-                    " " + line
-                )
+                current_row += " " + line
 
     if current_row:
 
         rows.append(
             current_row
         )
+
+    # --------------------------------------------------------
+    # Parse rows
+    # --------------------------------------------------------
 
     for row in rows:
 
@@ -1312,9 +1143,11 @@ def parse_ocr_row(
     filename
 ):
 
-    row = clean_text(
-        row
-    )
+    row = clean_text(row)
+
+    # --------------------------------------------------------
+    # Number
+    # --------------------------------------------------------
 
     number_match = re.match(
         r"^\s*(\d{1,3})(?:[.)])?\s+(.*)$",
@@ -1326,9 +1159,9 @@ def parse_ocr_row(
         return None
 
     number = number_match.group(1)
-
     body = number_match.group(2)
 
+    # Ignore obvious headings
     if any(
         keyword in body.upper()
         for keyword in [
@@ -1343,10 +1176,14 @@ def parse_ocr_row(
 
         return None
 
+    # --------------------------------------------------------
+    # NRC
+    # --------------------------------------------------------
+
     nrc = ""
 
     nrc_match = re.search(
-        r"\b\d{6}[/\\-]\d{2}[/\\-]\d\b",
+        r"\b\d{6}[/\-]\d{2}[/\-]\d\b",
         body
     )
 
@@ -1354,22 +1191,37 @@ def parse_ocr_row(
 
         nrc = nrc_match.group(0)
 
+    # OCR may confuse / with -
     nrc = nrc.replace(
         "-",
         "/"
     )
 
+    # --------------------------------------------------------
+    # Gender
+    # --------------------------------------------------------
+
     gender = ""
 
-    gender_match = re.search(
-        r"\b([MF])\b",
+    if re.search(
+        r"\bM\b",
         body,
         re.IGNORECASE
-    )
+    ):
 
-    if gender_match:
+        gender = "M"
 
-        gender = gender_match.group(1).upper()
+    elif re.search(
+        r"\bF\b",
+        body,
+        re.IGNORECASE
+    ):
+
+        gender = "F"
+
+    # --------------------------------------------------------
+    # Date of birth
+    # --------------------------------------------------------
 
     dob = ""
 
@@ -1382,11 +1234,14 @@ def parse_ocr_row(
 
         dob = dob_match.group(0)
 
+    # --------------------------------------------------------
+    # Create record
+    # --------------------------------------------------------
+
     record = {
         "Constituency": constituency,
         "No": number,
         "Ward": "",
-        "Zone": "",
         "Name_of_Pupil": "",
         "NRC": nrc,
         "Gender": gender,
@@ -1396,15 +1251,16 @@ def parse_ocr_row(
         "Study_Type": "",
         "Course_Duration": "",
         "Name_of_Skills_Institution": "",
-        "Total_TEVETA_Fees": "",
-        "Approved": "",
+        "Total": "",
         "Guardian_Parent_Name": "",
-        "Guardian_Parent_Phone": "",
         "Source_File": filename
     }
 
     # --------------------------------------------------------
-    # Extract known wards
+    # Attempt to extract Ward
+    #
+    # These are useful because OCR may preserve recognizable
+    # ward names.
     # --------------------------------------------------------
 
     known_wards = [
@@ -1439,7 +1295,9 @@ def parse_ocr_row(
             break
 
     # --------------------------------------------------------
-    # Extract name
+    # Extract the applicant name
+    #
+    # Remove the obvious fields.
     # --------------------------------------------------------
 
     name = body
@@ -1478,9 +1336,7 @@ def parse_ocr_row(
             flags=re.IGNORECASE
         )
 
-    name = clean_text(
-        name
-    )
+    name = clean_text(name)
 
     record["Name_of_Pupil"] = name
 
@@ -1497,6 +1353,8 @@ def remove_duplicate_records(df):
 
         return df
 
+    # Only remove exact duplicates across the meaningful
+    # applicant fields.
     dedupe_cols = [
         "Constituency",
         "No",
@@ -1527,12 +1385,14 @@ def process_pdf(item):
 
     constituency = item["constituency"]
 
+    url = item["url"]
+
     pdf_bytes, filename = download_pdf(
         item
     )
 
     # --------------------------------------------------------
-    # Determine PDF type
+    # Determine whether this is a text PDF
     # --------------------------------------------------------
 
     has_text = pdf_has_extractable_text(
@@ -1558,10 +1418,7 @@ def process_pdf(item):
             filename
         )
 
-        # ----------------------------------------------------
-        # OCR fallback
-        # ----------------------------------------------------
-
+        # If normal extraction failed, try OCR
         if not records:
 
             print(
@@ -1619,26 +1476,10 @@ def main():
     master_records = []
 
     # --------------------------------------------------------
-    # PROCESS ALL PDFs IN THE LIST
+    # PROCESS ALL PDFs
     # --------------------------------------------------------
 
-    for number, item in enumerate(
-        PDF_URLS,
-        start=1
-    ):
-
-        print(
-            "\n" + "=" * 70
-        )
-
-        print(
-            f"PROCESSING PDF "
-            f"{number}/{len(PDF_URLS)}"
-        )
-
-        print(
-            "=" * 70
-        )
+    for item in PDF_URLS:
 
         try:
 
@@ -1725,20 +1566,12 @@ def main():
         clean_gender
     )
 
-    df["Total_TEVETA_Fees"] = (
-        df["Total_TEVETA_Fees"].apply(
-            clean_amount
-        )
-    )
-
-    df["Guardian_Parent_Phone"] = (
-        df["Guardian_Parent_Phone"].apply(
-            clean_phone
-        )
+    df["Total"] = df["Total"].apply(
+        clean_amount
     )
 
     # --------------------------------------------------------
-    # Remove obviously empty rows
+    # Remove obviously invalid rows
     # --------------------------------------------------------
 
     df = df[

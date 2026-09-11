@@ -31,7 +31,7 @@ Used to read text from the scanned CDF PDF images.
 
 ### 1.2 Poppler for Windows
 
-Used by `pdf2image` to convert PDF pages into images.
+Used by `pdf2image` to convert OCR images into Digital PDFs.
 
 - **Download:** <https://github.com/oschwartz10612/poppler-windows/releases/>
 - Grab the latest `Release-xx.xx.x-0.zip`.
@@ -53,10 +53,6 @@ Used by `pdf2image` to convert PDF pages into images.
 ## 2. Set Up the Project (Windows, venv)
 
 Open **Command Prompt** or **PowerShell** and navigate to the project folder:
-
-```bat
-cd C:\Users\rodhack406\Desktop\projects\datamining
-```
 
 ### 2.1 Create a virtual environment
 
@@ -97,7 +93,7 @@ If you did **not** tick "Add to PATH" during the Tesseract install, do this manu
 
 1. Press `Win`, type **"Edit the system environment variables"**, and open it.
 2. Click **Environment Variables…**
-3. Under **User variables** (or System variables), select **Path** → **Edit…** → **New**.
+3. Under **User variables** select **Path** → **Edit…** → **New**.
 4. Add both:
    ```
    C:\Program Files\Tesseract-OCR
@@ -148,23 +144,9 @@ All output files use `|` (pipe) as the delimiter and are saved in the project fo
 | `db-unza26-csc4792-mufulira_health_facilities.csv` | Raw health facility data extracted from the Mufulira IDP |
 | `db-unza26-csc4792-mufulira_ward_public_consultation_issues.csv` | Raw ward public consultation issues extracted from the Mufulira IDP |
 | `db-unza26-csc4792-mufulira_master_capital_investment_framework.csv` | Raw master capital investment framework data extracted from the Mufulira IDP |
-
 ---
 
-## 8. Troubleshooting
-
-| Symptom | Fix |
-|---------|-----|
-| `pytesseract.pytesseract.TesseractNotFoundError` | Tesseract is not installed or not on PATH. See sections 1.1 and 3. |
-| `PDFInfoNotInstalledError` or `Unable to get page count. Is poppler installed and in PATH?` | Poppler not on PATH or wrong `bin` folder. See sections 1.2 and 3. |
-| `OCR libraries (pdf2image/pytesseract) not available` | You haven't run `pip install pdf2image pytesseract pillow` inside the activated venv. |
-| `Extracted 0 records` from CDF PDFs | Almost always means Tesseract or Poppler is missing/misconfigured — re-verify section 4. |
-| `Set-ExecutionPolicy` error when activating venv in PowerShell | Run `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned` once, then re-activate. |
-| `python: command not found` | Ensure Python is installed and on PATH; try `py -3 -m venv venv` instead. |
-
----
-
-## 9. Deactivating the Environment
+## 8. Deactivating the Environment
 
 When you're done:
 
