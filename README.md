@@ -126,8 +126,6 @@ From inside the project folder, with the virtual environment activated:
 ```bat
 python scrap.py
 ```
-    ```
-
 All output files use `|` (pipe) as the delimiter and are saved in the project folder.
 
 ---
