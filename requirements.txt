@@ -4,3 +4,6 @@ pdfplumber
 pandas 
 openpyxl
 urllib3
+pdf2image
+pytesseract
+pillow
