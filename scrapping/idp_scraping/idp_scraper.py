@@ -17,7 +17,6 @@ PDF_URL = (
     "Final-Signed-IDP-Mufulira-District.pdf"
 )
 
-<<<<<<< HEAD
 PROJECT_ROOT = os.path.dirname(
     os.path.dirname(
         os.path.dirname(
@@ -37,8 +36,6 @@ os.makedirs(
     exist_ok=True
 )
 
-=======
->>>>>>> c6f488de7c6020271243509c62fac015c0dc9bdf
 # Master Ward Mapping for Geocoding & Standardization
 WARD_CONSTITUENCY_MAP = {
     # Mufulira Constituency (10 Wards)
@@ -2513,29 +2510,20 @@ def main():
             df_master_capital
     }
 
-<<<<<<< HEAD
     print("\nSaving Pipe-Delimited CSV Datasets to data/raw:")
-=======
-    print("\nSaving Pipe-Delimited CSV Datasets to Current Directory:")
->>>>>>> c6f488de7c6020271243509c62fac015c0dc9bdf
     for filename, df in files.items():
         # String cleanup across all text fields
         for col in df.select_dtypes(include=['object']).columns:
             df[col] = df[col].apply(clean_str)
 
         # Export with Pipe '|' Delimiter
-<<<<<<< HEAD
         output_path = os.path.join(OUTPUT_DIR, filename)
         df.to_csv(output_path, sep="|", index=False, encoding="utf-8")
         print(f"   ✓ {output_path} ({len(df)} rows, {len(df.columns)} columns)")
-=======
-        df.to_csv(filename, sep="|", index=False, encoding="utf-8")
-        print(f"   ✓ {filename} ({len(df)} rows, {len(df.columns)} columns)")
->>>>>>> c6f488de7c6020271243509c62fac015c0dc9bdf
 
     print("\n" + "="*70)
     print(
-        "SUCCESS: All 5 IDP Governance Datasets "
+        "SUCCESS: All 4 IDP Governance Datasets "
         "Successfully Generated!"
     )
     print("="*70)
