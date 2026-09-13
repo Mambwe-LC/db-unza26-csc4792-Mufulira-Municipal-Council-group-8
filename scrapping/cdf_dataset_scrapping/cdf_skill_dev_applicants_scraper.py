@@ -101,7 +101,6 @@ PDF_URLS = [
 ]
 
 
-<<<<<<< HEAD
 PROJECT_ROOT = os.path.dirname(
     os.path.dirname(
         os.path.dirname(
@@ -120,10 +119,6 @@ os.makedirs(
     OUTPUT_DIR,
     exist_ok=True
 )
-=======
-# Current directory
-OUTPUT_DIR = "."
->>>>>>> c6f488de7c6020271243509c62fac015c0dc9bdf
 
 
 # ============================================================

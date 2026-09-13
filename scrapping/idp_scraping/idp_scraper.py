@@ -1,7 +1,4 @@
-<<<<<<< HEAD
 import os
-=======
->>>>>>> c6f488de7c6020271243509c62fac015c0dc9bdf
 import re
 import io
 import requests
