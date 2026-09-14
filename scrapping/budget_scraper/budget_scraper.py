@@ -56,8 +56,23 @@ PDF_DOCUMENTS = [
 # OUTPUT FILES
 # ============================================================
 
-OUTPUT_DIR = os.path.dirname(
-    os.path.abspath(__file__)
+PROJECT_ROOT = os.path.dirname(
+    os.path.dirname(
+        os.path.dirname(
+            os.path.abspath(__file__)
+        )
+    )
+)
+
+OUTPUT_DIR = os.path.join(
+    PROJECT_ROOT,
+    "data",
+    "raw"
+)
+
+os.makedirs(
+    OUTPUT_DIR,
+    exist_ok=True
 )
 
 FINAL_CSV = os.path.join(

@@ -28,8 +28,24 @@ urllib3.disable_warnings(
 
 CDF_PAGE_URL = "https://www.mufuliracouncil.gov.zm/?page_id=792"
 
-# Current directory where the Python script is being run
-OUTPUT_DIR = "."
+PROJECT_ROOT = os.path.dirname(
+    os.path.dirname(
+        os.path.dirname(
+            os.path.abspath(__file__)
+        )
+    )
+)
+
+OUTPUT_DIR = os.path.join(
+    PROJECT_ROOT,
+    "data",
+    "raw"
+)
+
+os.makedirs(
+    OUTPUT_DIR,
+    exist_ok=True
+)
 
 
 # ============================================================

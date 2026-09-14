@@ -101,8 +101,24 @@ PDF_URLS = [
 ]
 
 
-# Current directory
-OUTPUT_DIR = "."
+PROJECT_ROOT = os.path.dirname(
+    os.path.dirname(
+        os.path.dirname(
+            os.path.abspath(__file__)
+        )
+    )
+)
+
+OUTPUT_DIR = os.path.join(
+    PROJECT_ROOT,
+    "data",
+    "raw"
+)
+
+os.makedirs(
+    OUTPUT_DIR,
+    exist_ok=True
+)
 
 
 # ============================================================
