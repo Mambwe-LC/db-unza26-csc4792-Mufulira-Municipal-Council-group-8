@@ -16,6 +16,12 @@ Council** website into structured, pipe-delimited CSV files for data mining. It 
 
 ---
 
+## Data Extraction Steps
+
+- [steps during data extraction](steps_involved_in_creation_of_datasets.ipynb)
+
+---
+
 ## Team Roles and Responsibilities
 
 The following team members were responsible for different components of this data mining project:
