@@ -1,4 +1,4 @@
-# Mufulira Municipal Council Data Extraction & Cleaning — README
+# Mufulira Municipal Council Data Extraction & Cleaning
 
 This project scrapes, extracts, cleans, and preprocesses data from the **Mufulira Municipal
 Council** website into structured, pipe-delimited CSV files for data mining. It produces
@@ -14,43 +14,27 @@ Council** website into structured, pipe-delimited CSV files for data mining. It 
    Integrated Development Plan PDF (wards & demographics, health facilities, ward public
    consultation issues, master capital investment framework).
 
-Every dataset then goes through a **separate cleaning and preprocessing stage** (see
-Section 6) before being considered final.
-
 ---
 
-## Project Structure
+## Team Roles and Responsibilities
 
-```
-.
-├── scrap.py                     # Runs all 4 extraction scripts, in order
-├── clean.py                     # Runs all 8 cleaning scripts, in order
-├── scrapping/                   # Extraction scripts (one subfolder per source)
-│   ├── idp_scraping/
-│   ├── cdf_dataset_scrapping/
-│   └── budget_scraper/
-├── cleaning/                    # Cleaning & preprocessing scripts (one per dataset)
-│   ├── cleaning_utils.py        # Shared helper functions used by every clean_*.py script
-│   ├── clean_administrative_wards_demographics.py
-│   ├── clean_cdf_projects.py
-│   ├── clean_cdf_skills_applicants.py
-│   ├── clean_health_facilities.py
-│   ├── clean_master_capital_investment_framework.py
-│   ├── clean_ward_public_consultation_issues.py
-│   ├── clean_budget_revenue.py
-│   └── clean_budget_raw_tables.py
-├── data/
-│   ├── raw/                     # Freshly-scraped CSVs land here (input to clean.py)
-│   └── clean/                   # Final, cleaned CSVs land here (submission-ready)
-├── db_unza26_csc4792_Mufulira_Municipal_Council.ipynb   # Colab notebook: orchestrates the above + EDA
-├── steps_involved_in_creation_of_datasets.ipynb          # Methodology write-up
-├── requirements.txt
-└── README.md
-```
+The following team members were responsible for different components of this data mining project:
 
----
+| Team Member | Computer Number | Role | Responsibilities |
+|-------------|-----------------|------|------------------|
+| **Moses Kaluba** | `2021387283` | Team Lead / Data Extraction & Mining | Led the team and coordinated the overall data mining activities. Responsible for extracting data from the identified sources and carrying out the data mining processes. |
+| **Kalebalika Chileshe** | `2021452344` | EDA & Data Cleaning | Responsible for Exploratory Data Analysis (EDA) and cleaning of the extracted datasets. |
+| **Mambwe Luke Chilebela** | `2021480348` | EDA & Data Cleaning | Responsible for Exploratory Data Analysis (EDA) and cleaning of the extracted datasets. |
+| **Kasonkomona Mulenga** | `2021519929` | Data Brief Documentation | Responsible for writing and documenting the data brief description paper. |
+| **Ephetred Ndhlovu** | `2021463681`| Data Brief Documentation | Responsible for writing and documenting the data brief description paper. |
 
-## 1. Prerequisites
+### Team Contribution Summary
+
+- **Team Leadership:** Moses Kaluba coordinated the team and oversaw the completion of the project activities and performed Data Extraction and Mining
+- **Data Cleaning and EDA:** Kalebalika Chileshe and Mambwe Luke Chilebela were responsible for preparing the extracted datasets through data cleaning and conducting Exploratory Data Analysis.
+- **Data Brief Description:** Kasonkomona Mulenga and Ephetred Ndhlovu were responsible for preparing the written data brief description paper documenting the datasets and their characteristics.
+
+## 1. Prerequisites for running the project
 
 Before you begin, you must install **two external tools**. They are **not** Python packages —
 they are standalone programs that Python calls behind the scenes. Without them, the CDF OCR
@@ -193,77 +177,6 @@ All output files use `|` (pipe) as the delimiter.
 | `db-unza26-csc4792-mufulira_ward_public_consultation_issues.csv` | Raw ward public consultation issues from the IDP |
 | `db-unza26-csc4792-mufulira_master_capital_investment_framework.csv` | Raw master capital investment framework data from the IDP |
 
----
-
-## 6. Running the Cleaning & Preprocessing Scripts
-
-Once `data/raw/` contains all 8 raw CSVs, run:
-
-```bat
-python clean.py
-```
-
-This runs the 8 scripts in `cleaning/`, **in a fixed order** (`clean_administrative_wards_
-demographics.py` must run before `clean_health_facilities.py`, since the latter backfills its
-`Constituency` column from the former's cleaned output). Each script prints a report as it
-runs — rows dropped and why, which columns were imputed (and with what value), and which
-columns were left null because there was nothing to compute a mean/mode from. Keep this output;
-it's useful evidence for the Data Description Paper's methodology section.
-
-What the cleaning stage does, beyond generic "drop duplicates / fill nulls":
-
-- Replaces placeholder text (`"Unspecified"`, `"N/A"`, empty strings, ...) with real `NaN`
-  before any missing-value handling happens.
-- Converts currency/number-like text columns to proper numeric dtypes.
-- **Numeric columns:** missing values filled with the column mean — except where a column is
-  100% missing, in which case there's no mean to compute, so it's left `NaN` and flagged in
-  the printed output rather than invented.
-- **Categorical columns:** missing values filled with the column mode (most frequent value),
-  applied only where a value is genuinely missing rather than structurally absent (e.g.
-  `revenue_source` is intentionally left blank for non-revenue budget lines, not mode-filled).
-- Drops exact duplicate rows.
-- Fixes source-specific issues: OCR letter-spacing artifacts, leftover PDF table-header rows
-  that leaked in as fake data rows, and corrupted multi-record blob rows in the skills
-  applicants source (see comments at the top of each `clean_*.py` script for the specifics).
-- Corrects the two budget files' output naming to match the assignment's required convention
-  (`csc4792_mufulira` → `csc4792-mufulira`).
-
-### Clean Output Files (`data/clean/`)
-
-| File | Description |
-|------|-------------|
-| `db-unza26-csc4792-mufulira_administrative_wards_demographics.csv` | Cleaned ward/constituency demographics, with a derived `Level` column |
-| `db-unza26-csc4792-mufulira_health_facilities.csv` | Cleaned health facility records |
-| `db-unza26-csc4792-mufulira_ward_public_consultation_issues.csv` | Cleaned ward public consultation issues |
-| `db-unza26-csc4792-mufulira_master_capital_investment_framework.csv` | Cleaned capital investment framework |
-| `db-unza26-csc4792-mufulira_cdf_projects.csv` | Cleaned CDF community projects |
-| `db-unza26-csc4792-mufulira_cdf_skills_applicants.csv` | Cleaned skills development applicants |
-| `db-unza26-csc4792-mufulira_budget_revenue_2023_2026.csv` | Cleaned budget and revenue records |
-| `db-unza26-csc4792-mufulira_budget_raw_tables_2023_2026.csv` | Lightly-cleaned raw table dump (traceability copy) |
-
-These are the files that should be uploaded to Kaggle and referenced in the Data Description
-Paper — **not** the files in `data/raw/`.
-
----
-
-## 7. Using the Notebook
-
-`db_unza26_csc4792_Mufulira_Municipal_Council.ipynb` is a Google Colab notebook that
-orchestrates the full pipeline rather than duplicating the scripts' logic:
-
-1. Mounts Google Drive and clones this repo fresh.
-2. By default (`REGENERATE_DATASETS = False`), it just loads the CSVs already committed in
-   `data/raw/` and `data/clean/` — fast, no scraping needed.
-3. If you set `REGENERATE_DATASETS = True`, it instead calls the real extraction and cleaning
-   scripts directly (`scrapping/` and `cleaning/`) — useful for demonstrating the pipeline
-   end-to-end, but slow (real network scraping + OCR).
-4. Documents the raw → clean transformation (row counts, missing-value rates, categorical
-   standardization) as evidence the data was actually cleaned, not just scraped.
-5. Runs EDA on the final cleaned datasets.
-
-Open it directly in Colab via the badge at the top of the notebook, or upload it manually.
-
----
 
 ## 8. Deactivating the Environment
 
