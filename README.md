@@ -166,19 +166,13 @@ This runs, in order:
 
 All output files use `|` (pipe) as the delimiter.
 
-> **Note:** raw output should end up in `data/raw/`. If you find the CSVs land in the project
-> root folder instead, move them into `data/raw/` before moving on to Section 6 — the cleaning
-> scripts read their input from there.
 
-### Raw Output Files (`data/raw/`)
+### Raw Output Files
 
 | File | Description |
 |------|-------------|
-| `db-unza26-csc4792-mufulira_cdf_projects.csv` | Raw CDF community projects |
 | `db-unza26-csc4792-mufulira_cdf_skills_applicants.csv` | Raw Skills Development Bursary applicants (2025–2026) |
-| `db-unza26-csc4792_mufulira_budget_raw_tables_2023_2026.csv` | Raw tables extracted from the four budget PDFs |
 | `db-unza26-csc4792_mufulira_budget_revenue_2023_2026.csv` | Raw budget and revenue records |
-| `db-unza26-csc4792-mufulira_administrative_wards_demographics.csv` | Raw administrative ward and demographic data from the IDP |
 | `db-unza26-csc4792-mufulira_health_facilities.csv` | Raw health facility data from the IDP |
 | `db-unza26-csc4792-mufulira_ward_public_consultation_issues.csv` | Raw ward public consultation issues from the IDP |
 | `db-unza26-csc4792-mufulira_master_capital_investment_framework.csv` | Raw master capital investment framework data from the IDP |
