@@ -40,7 +40,7 @@ The following team members were responsible for different components of this dat
 - **Data Cleaning and EDA:** Kalebalika Chileshe and Mambwe Luke Chilebela were responsible for preparing the extracted datasets through data cleaning and conducting Exploratory Data Analysis.
 - **Data Brief Description:** Kasonkomona Mulenga and Ephetred Ndhlovu were responsible for preparing the written data brief description paper documenting the datasets and their characteristics.
 
-## 1. Prerequisites for running the project
+## 1. Prerequisites for running the data extraction scripts
 
 Before you begin, you must install **two external tools**. They are **not** Python packages —
 they are standalone programs that Python calls behind the scenes. Without them, the CDF OCR
